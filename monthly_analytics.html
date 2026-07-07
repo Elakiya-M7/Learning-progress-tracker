@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Analytics - DailyTrack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">📊 Monthly Analytics</h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">{{ month }}/{{ year }}</h5>
+                </div>
+                <div class="col text-end">
+                    <span class="h6">Average Completion: {{ monthly_completion|int }}%</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="progress" style="height: 40px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ monthly_completion }}%">
+                    {{ monthly_completion|int }}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Daily Breakdown</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Completion</th>
+                            <th>Mood</th>
+                            <th>Reflection</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in daily_logs %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('calendar.day_view', date_str=log.log_date) }}">
+                                    {{ log.log_date.strftime('%a, %b %d') }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 25px; width: 150px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ log.completion_percent }}%">
+                                        {{ log.completion_percent|int }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if log.mood_rating %}
+                                    {% for i in range(log.mood_rating) %}⭐{% endfor %} ({{ log.mood_rating }})
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.reflection_note %}
+                                    <small>{{ log.reflection_note[:50] }}...</small>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

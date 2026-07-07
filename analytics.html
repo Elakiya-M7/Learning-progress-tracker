@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - DailyTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4">📈 Analytics Dashboard</h1>
+
+    <div class="row">
+        <!-- Today's Completion -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Today's Completion</h6>
+                    <h2 class="card-title">{{ today_completion|int }}%</h2>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ today_completion }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Streak -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Current Streak</h6>
+                    <h2 class="card-title">🔥 {{ overall_streak }}</h2>
+                    <p class="mb-0 text-muted">days in a row</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Day -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Best Day</h6>
+                    {% if best_day %}
+                    <h2 class="card-title">{{ best_day[0] }}</h2>
+                    <p class="mb-0 text-muted">{{ (best_day[1]|sum / best_day[1]|length)|int }}% avg</p>
+                    {% else %}
+                    <p class="text-muted">No data yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Worst Day -->
+        <div class="col-md-3 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Weakest Day</h6>
+                    {% if worst_day %}
+                    <h2 class="card-title">{{ worst_day[0] }}</h2>
+                    <p class="mb-0 text-muted">{{ (worst_day[1]|sum / worst_day[1]|length)|int }}% avg</p>
+                    {% else %}
+                    <p class="text-muted">No data yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Weekly Trend Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Weekly Trend (Last 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="weeklyChart" style="height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Breakdown Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Category Breakdown (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" style="height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Details -->
+    {% if category_data %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Category Performance</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for category in category_data %}
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="badge" style="background-color: {{ category.color }};">●</span>
+                            <strong>{{ category.name }}</strong>
+                        </div>
+                        <span class="badge bg-light text-dark">{{ category.completed }}/{{ category.total }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ category.percentage }}%; background-color: {{ category.color }};" 
+                             aria-valuenow="{{ category.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ category.percentage }}%
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Weekly Chart
+const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+const weeklyData = {{ weekly_data|tojson }};
+new Chart(weeklyCtx, {
+    type: 'line',
+    data: {
+        labels: weeklyData.map(d => d.date),
+        datasets: [{
+            label: 'Completion %',
+            data: weeklyData.map(d => d.completion),
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#3498db',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: true }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { callback: v => v + '%' }
+            }
+        }
+    }
+});
+
+// Category Chart
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+const categoryData = {{ category_data|tojson }};
+if (categoryData.length > 0) {
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryData.map(c => c.name),
+            datasets: [{
+                data: categoryData.map(c => c.completed),
+                backgroundColor: categoryData.map(c => c.color)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+</script>
+{% endblock %}

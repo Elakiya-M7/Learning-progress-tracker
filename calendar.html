@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - DailyTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        background-color: #ddd;
+        padding: 2px;
+        border-radius: 4px;
+    }
+    .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        font-weight: bold;
+        text-align: center;
+        background-color: #333;
+        color: white;
+        padding: 8px 2px;
+        border-radius: 4px 4px 0 0;
+    }
+    .calendar-header-cell {
+        padding: 8px;
+        background-color: #333;
+    }
+    .calendar-day {
+        aspect-ratio: 1;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: opacity 0.3s;
+        font-weight: bold;
+        font-size: 0.9rem;
+        text-align: center;
+        min-height: 60px;
+    }
+    .calendar-day:hover {
+        opacity: 0.9;
+    }
+    .calendar-day.empty {
+        background-color: #f0f0f0;
+        cursor: default;
+    }
+    .calendar-day.red {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .calendar-day.orange {
+        background-color: #e67e22;
+        color: white;
+    }
+    .calendar-day.yellow {
+        background-color: #f39c12;
+        color: white;
+    }
+    .calendar-day.light-green {
+        background-color: #52be80;
+        color: white;
+    }
+    .calendar-day.dark-green {
+        background-color: #27ae60;
+        color: white;
+    }
+    .completion-text {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+    .calendar-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">📅 Calendar View</h1>
+
+    <!-- Color Legend -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6>Completion %</h6>
+            <div class="row">
+                <div class="col-auto"><span class="badge" style="background-color: #27ae60;">90-100%</span></div>
+                <div class="col-auto"><span class="badge" style="background-color: #52be80;">70-89%</span></div>
+                <div class="col-auto"><span class="badge" style="background-color: #f39c12;">40-69%</span></div>
+                <div class="col-auto"><span class="badge" style="background-color: #e67e22;">10-39%</span></div>
+                <div class="col-auto"><span class="badge" style="background-color: #e74c3c;">0% / No tasks</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Controls -->
+    <div class="calendar-controls">
+        <div>
+            <a href="{{ url_for('calendar.month_view', year=prev_year, month=prev_month) }}" class="btn btn-outline-primary">← Previous</a>
+            <span class="mx-3 h5">{{ month_name }} {{ year }}</span>
+            <a href="{{ url_for('calendar.month_view', year=next_year, month=next_month) }}" class="btn btn-outline-primary">Next →</a>
+        </div>
+        <div>
+            <a href="{{ url_for('calendar.year_view', year=year) }}" class="btn btn-outline-secondary">View Year</a>
+        </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="calendar-header">
+        <div class="calendar-header-cell">Sun</div>
+        <div class="calendar-header-cell">Mon</div>
+        <div class="calendar-header-cell">Tue</div>
+        <div class="calendar-header-cell">Wed</div>
+        <div class="calendar-header-cell">Thu</div>
+        <div class="calendar-header-cell">Fri</div>
+        <div class="calendar-header-cell">Sat</div>
+    </div>
+
+    <div class="calendar-grid">
+        {% for week in calendar_data %}
+            {% for day in week %}
+                {% if day %}
+                    <div class="calendar-day {{ day.color_class }}" 
+                         onclick="window.location.href='{{ url_for('calendar.day_view', date_str=day.date) }}'"
+                         title="Click to view tasks for this day">
+                        <div class="fw-bold">{{ day.day }}</div>
+                        <div class="completion-text">{{ day.completion }}%</div>
+                    </div>
+                {% else %}
+                    <div class="calendar-day empty"></div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <!-- Mini Monthly View Card -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="mb-0">Tips for Better Productivity</h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Aim for 90%+ completion (dark green) every day</li>
+                <li>Break larger tasks into smaller, manageable subtasks</li>
+                <li>Use categories to organize tasks by area</li>
+                <li>Attach photos/videos as proof of completion for creative tasks</li>
+                <li>Check the Analytics page to see trends and patterns</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

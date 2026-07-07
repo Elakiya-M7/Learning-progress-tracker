@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Year View - DailyTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .year-heatmap {
+        display: grid;
+        grid-template-columns: repeat(53, 15px);
+        gap: 2px;
+        margin: 20px 0;
+    }
+    .heatmap-cell {
+        width: 15px;
+        height: 15px;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    .heatmap-cell:hover {
+        stroke: #333;
+        stroke-width: 2px;
+    }
+    .heatmap-level-0 { background-color: #ebedf0; }
+    .heatmap-level-1 { background-color: #c6e48b; }
+    .heatmap-level-2 { background-color: #7bc96f; }
+    .heatmap-level-3 { background-color: #239a3b; }
+    .heatmap-level-4 { background-color: #196127; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('calendar.month_view', year=year) }}" class="btn btn-outline-secondary">← Back to Calendar</a>
+    </div>
+
+    <h1 class="mb-4">📊 {{ year }} Productivity Heatmap</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <p class="text-muted">A GitHub-style visualization of your daily productivity throughout the year.</p>
+            <div class="year-heatmap" id="heatmap">
+                <!-- Heatmap cells will be generated here -->
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    <span class="badge" style="background-color: #ebedf0;"> 0%</span>
+                    <span class="badge" style="background-color: #c6e48b;"> 1-25%</span>
+                    <span class="badge" style="background-color: #7bc96f;"> 26-50%</span>
+                    <span class="badge" style="background-color: #239a3b;"> 51-75%</span>
+                    <span class="badge" style="background-color: #196127;"> 76-100%</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Generate heatmap
+const logsData = {{ logs_by_date|tojson }};
+const year = {{ year }};
+const heatmap = document.getElementById('heatmap');
+
+// Create 365/366 cells for the year
+const startDate = new Date(year, 0, 1);
+const endDate = new Date(year, 11, 31);
+let currentDate = new Date(startDate);
+
+while (currentDate <= endDate) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const completion = logsData[dateStr] || 0;
+    
+    let levelClass = 'heatmap-level-0';
+    if (completion > 75) levelClass = 'heatmap-level-4';
+    else if (completion > 50) levelClass = 'heatmap-level-3';
+    else if (completion > 25) levelClass = 'heatmap-level-2';
+    else if (completion > 0) levelClass = 'heatmap-level-1';
+    
+    const cell = document.createElement('div');
+    cell.className = `heatmap-cell ${levelClass}`;
+    cell.title = `${dateStr}: ${completion}%`;
+    cell.onclick = () => window.location.href = `{{ url_for('calendar.day_view', date_str='') }}${dateStr}`;
+    heatmap.appendChild(cell);
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+}
+</script>
+{% endblock %}

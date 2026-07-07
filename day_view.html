@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Day View - DailyTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .task-card {
+        border-left: 4px solid #3498db;
+    }
+    .task-card.completed {
+        opacity: 0.6;
+        background-color: #f8f9fa;
+    }
+    .task-card.completed .task-title {
+        text-decoration: line-through;
+    }
+    .priority-high { border-left-color: #e74c3c; }
+    .priority-med { border-left-color: #f39c12; }
+    .priority-low { border-left-color: #2ecc71; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('calendar.month_view') }}" class="btn btn-outline-secondary">← Back to Calendar</a>
+    </div>
+
+    <h1 class="mb-4">📅 {{ day_date.strftime('%A, %B %d, %Y') }}</h1>
+
+    {% if daily_log %}
+    <div class="card mb-4 bg-light">
+        <div class="card-body">
+            <h5>Daily Summary</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Completion: {{ daily_log.completion_percent|int }}%</strong></p>
+                </div>
+                {% if daily_log.mood_rating %}
+                <div class="col-md-6">
+                    <p><strong>Mood: </strong>
+                    {% for i in range(daily_log.mood_rating) %}⭐{% endfor %}
+                    ({{ daily_log.mood_rating }}/5)
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% if daily_log.reflection_note %}
+            <p><strong>Reflection:</strong></p>
+            <blockquote class="blockquote">{{ daily_log.reflection_note }}</blockquote>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tasks for this day -->
+    {% if tasks %}
+    <h5 class="mb-3">Tasks ({{ tasks|length }})</h5>
+    {% for task in tasks %}
+    <div class="card task-card priority-{{ task.priority.value.lower() }} mb-3 {% if task.is_completed %}completed{% endif %}">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-auto">
+                    <input type="checkbox" class="form-check-input mt-2" {% if task.is_completed %}checked{% endif %} disabled>
+                </div>
+                <div class="col">
+                    <h6 class="card-subtitle task-title">{{ task.title }}</h6>
+                    <small class="text-muted">
+                        <span class="badge" style="background-color: {{ task.category.color_hex }}">{{ task.category.icon }}</span>
+                        <span class="badge bg-secondary">{{ task.priority.value }}</span>
+                    </small>
+                    {% if task.notes %}
+                    <p class="card-text small mt-2">{{ task.notes }}</p>
+                    {% endif %}
+                    {% if task.media_url %}
+                    <div class="mt-2">
+                        {% if task.media_url.endswith(('.jpg', '.jpeg', '.png')) %}
+                        <img src="{{ url_for('static', filename=task.media_url) }}" alt="Task media" class="img-thumbnail" style="max-width: 150px;">
+                        {% elif task.media_url.endswith(('.mp4', '.mov')) %}
+                        <video class="img-thumbnail" style="max-width: 150px;" controls>
+                            <source src="{{ url_for('static', filename=task.media_url) }}">
+                        </video>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-auto">
+                    <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-info">No tasks for this day.</div>
+    {% endif %}
+</div>
+{% endblock %}
